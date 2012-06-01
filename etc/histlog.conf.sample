@@ -1,0 +1,6 @@
+require "common.conf"
+
+storage = "file"
+--storage = "mysql"
+
+--add_tag(name, deadband)
