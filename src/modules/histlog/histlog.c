@@ -56,9 +56,8 @@ int main(int argc,char *argv[]) {
      * argument is required */
     flags = CFG_CMDLINE | CFG_MODCONF | CFG_ARG_REQUIRED;
     result += dax_add_attribute(ds, "storage","storage", 's', flags, "file");
-    result += dax_add_attribute(ds, "event_tag","event_tag", 'e', flags, "skel_event");
     /* Execute the configuration */
-    dax_configure(ds, argc, argv, CFG_CMDLINE);
+    dax_configure(ds, argc, argv, CFG_CMDLINE | CFG_MODCONF);
 
     /* Get the results of the configuration */
     storage = strdup(dax_get_attr(ds, "storage"));
@@ -72,9 +71,10 @@ int main(int argc,char *argv[]) {
     /* Check for OpenDAX and register the module */
     if( dax_connect(ds) ) {
         dax_fatal(ds, "Unable to find OpenDAX");
+    } else {
+        /* Let's say we're running */
+        dax_mod_set(ds, MOD_CMD_RUNNING, NULL);
     }
-    /* Let's say we're running */
-    dax_mod_set(ds, MOD_CMD_RUNNING, NULL);
     while(1) {
         /* Check to see if the quit flag is set.  If it is then bail */
         if(_quitsignal) {

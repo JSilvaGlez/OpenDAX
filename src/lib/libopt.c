@@ -358,7 +358,10 @@ _mod_config_file(dax_state *ds) {
             return ERR_ALLOC;
         }
     }
-    luaopen_base(ds->L);
+    lua_pushcfunction(ds->L, luaopen_base);
+    lua_call(ds->L,0,0);
+    //lua_pushcfunction(ds->L, luaopen_package);
+    //lua_call(ds->L,0,0);
     
     lua_pushstring(ds->L, ds->modulename);
     lua_setglobal(ds->L, CONFIG_GLOBALNAME);
