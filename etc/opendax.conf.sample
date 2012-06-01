@@ -19,11 +19,6 @@ confprefix = prefix .. "etc/"
 user  = "opendax"
 group = "opendax"
 
---We only run this part when it's the master daemon configuration call
-if calling_module == "opendax" then
-
-end
-
 -- Each of the following tables represents a process that we want to start
 -- and monitor.
 --
@@ -42,7 +37,7 @@ end
 --              the master will kill it.  If restart is enabled it will attempt a restart.  If
 --              not set or set to zero the feature will be ignored.
 --
---    * = Currently not implemented.
+--    * = Currently only implemented for Linux.
 
 server = {}
 
