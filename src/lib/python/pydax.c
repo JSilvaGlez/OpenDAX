@@ -55,7 +55,7 @@ pydax_init(PyObject *pSelf, PyObject *pArgs)
         PyErr_SetString(PyExc_IOError, "Unable to Allocate Configuration");
         return NULL;
     }
-    dax_configure(ds, argc, argv, CFG_CMDLINE | CFG_DAXCONF);
+    dax_configure(ds, argc, argv, CFG_CMDLINE);
 
     /* Free the configuration data */
     dax_free_config(ds);

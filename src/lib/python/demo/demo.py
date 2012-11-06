@@ -7,7 +7,10 @@ new_type = (("Mem1", "BOOL", 10),
             ("Mem2", "BOOL", 1),
             ("Mem3", "BOOL", 3))
 
-x = pydax.cdt_create("PyDAX_Type", new_type)
+try:
+    x = pydax.cdt_create("PyDAX_Type", new_type)
+except:
+    pass
 #print hex(x)
 
 pydax.add("PyBYTE", "BYTE", 10)
