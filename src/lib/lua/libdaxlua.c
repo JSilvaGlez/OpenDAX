@@ -766,31 +766,6 @@ _event_callback(void *data) {
     lua_call(rdata->L, 1, 0);
 }
 
-/* Takes a string as an argument and returns the event type that the
- * string represents.  Returns ERR_ARG if it can't find a match */
-static int
-_get_event_type(char *str) {
-    if(strcasecmp(str, "WRITE") == 0) {
-        return EVENT_WRITE;
-    } else if(strcasecmp(str, "CHANGE") == 0) {
-        return EVENT_CHANGE;
-    } else if(strcasecmp(str, "DEADBAND") == 0) {
-        return EVENT_DEADBAND;
-    } else if(strcasecmp(str, "SET") == 0) {
-        return EVENT_SET;
-    } else if(strcasecmp(str, "RESET") == 0) {
-        return EVENT_RESET;
-    } else if(strcasecmp(str, "EQUAL") == 0) {
-        return EVENT_EQUAL;
-    } else if(strcasecmp(str, "GREATER") == 0) {
-        return EVENT_GREATER;
-    } else if(strcasecmp(str, "LESS") == 0) {
-        return EVENT_LESS;
-    } else {
-        return ERR_ARG;
-    }
-}
-
 /* Converts the lua_Number that we would get off of the Lua stack into
  * the proper datatype for DAX.  The pointer that is returned in **data
  * will wind up pointing to a static member within this function.  This
@@ -895,7 +870,7 @@ _event_add(lua_State *L) {
     }
     /* Get the event type and any number */
     str = (char *)lua_tostring(L, 3);
-    type = _get_event_type(str);
+    type = dax_event_string_to_type(str);
     if(type < 0) {
         free(edata);
         luaL_error(L, "%s is not a valid event type", str);
