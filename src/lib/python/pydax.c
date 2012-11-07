@@ -610,15 +610,59 @@ pydax_write(PyObject *pSelf, PyObject *pArgs)
     Py_RETURN_NONE;
 }
 
+static void
+_event_callback(void *udata)
+{
+    
+}
 
+static void
+_event_del_callback(void *udata)
+{
+    
+}
+
+/* Used to add an event to the server's event list.  The arguments are...
+ * 1 - string - tagname
+ * 2 - int - count
+ * 3 - string - event type
+ * 4 - object - event data
+ * 5 - function - callback function
+ * 6 - object - callback data
+ */
 static PyObject *
 pydax_event_add(PyObject *pSelf, PyObject *pArgs)
 {
+    char *tagname, *str;
+    int count, type, result;
+    PyObject *edata, *pfunc, *udata;
+    struct callback_data *cb_data;
+    dax_type_union value;
+    Handle handle;
+    dax_event_id eid;
+    
     if(ds == NULL) {
         PyErr_SetString(PyExc_Exception, "OpenDAX is not initialized");
         return NULL;
     }
-
+    
+    /* Allocate the memory for the userdata that we use on the callback. */
+    cb_data = malloc(sizeof(struct callback_data));
+    if(cb_data == NULL) {
+        PyErr_SetString(PyExc_Exception, "Unable to Allocate Memory");
+        return NULL;
+    }
+    result = PyArg_ParseTuple(pArgs, "sisOOO", tagname, &count, str, edata, pfunc, udata);
+    //TODO: Check result and act appropriately 
+    result = dax_tag_handle(ds, &handle, tagname, count);
+    //TODO: Check result and act appropriately
+    /* Get the type from the string passed to us */
+    type = dax_event_string_to_type(str);
+    /* Convert the event data object to a dax data type */
+    result = _python_to_dax(handle.type, &value, edata);
+    //TODO: Check result and act appropriately
+    int dax_event_add(ds, &handle, type, &value, &eid, _event_callback, cb_data, _event_del_callback);
+    //TODO: Create a tuple from the idx and id from 'eid' and return to Python
     Py_RETURN_NONE;
 }
 
@@ -668,7 +712,6 @@ static PyMethodDef pydax_methods[] = {
     {"event_del", pydax_event_del, METH_VARARGS, NULL},
     {"event_wait", pydax_event_wait, METH_VARARGS, NULL},
     {"event_poll", pydax_event_poll, METH_VARARGS, NULL},
-    {"write", pydax_write, METH_VARARGS, NULL},
     {NULL, NULL}};
 
 PyMODINIT_FUNC

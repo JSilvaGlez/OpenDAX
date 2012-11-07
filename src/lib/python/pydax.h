@@ -27,3 +27,12 @@ struct iter_udata {
     void *data;
     int error;
 };
+
+/* We use this structure to hold the Python callback function as
+ * well as the PyOjbect that the Python function gave us during
+ * the add_event() call.  We pass this object to the Python function
+ * when our callback is called */
+struct callback_data {
+    PyObject *callback;
+    PyObject *data;
+};
