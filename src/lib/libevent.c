@@ -212,6 +212,11 @@ dax_event_dispatch(dax_state *ds, dax_event_id *id)
     
 //    fprintf(stderr, "dax_event_dispatch() called\n");
     result = read(ds->afd, &(ds->ebuff[ds->eindex]), EVENT_MSGSIZE - ds->eindex);
+    if(result < 0) {
+        dax_error(ds, "dax_event_dispatch() read returned -1?\n");
+        ds->eindex = 0;
+        return ERR_MSG_RECV;
+    }
     ds->eindex += result;
 //    fprintf(stderr, "ds->eindex = %d\n", ds->eindex);
     if(ds->eindex == EVENT_MSGSIZE) { /* We have a full message now */
@@ -244,7 +249,7 @@ dax_event_dispatch(dax_state *ds, dax_event_id *id)
                 return 0;
             }
         }
-        dax_error(ds, "dax_event_dispatch() recieved an event that does not exist in database");
+        dax_error(ds, "dax_event_dispatch() received an event that does not exist in database");
         return ERR_GENERIC;
     } else {
         return ERR_NOTFOUND;

@@ -57,6 +57,7 @@ dax_init(char *name)
     }
     ds->event_size = 1;
     ds->event_count = 0;
+    ds->eindex = 0;
     /* Logging functions */
     ds->dax_debug = NULL;
     ds->dax_error = NULL;
