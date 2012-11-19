@@ -136,6 +136,8 @@ pydax_cdt_create(PyObject *pSelf, PyObject *pArgs)
         }
     }
     result = dax_cdt_create(ds, cdt, &type);
+    /*TODO: Should probably have different exceptions for different failures.  If the
+     *      type already exists then that's different than it not being created. */
     if(result) {
         PyErr_Format(PyExc_Exception, "Unable to create type '%s'", cdt_name);
         dax_cdt_free(cdt);
@@ -292,7 +294,7 @@ pydax_get(PyObject *pSelf, PyObject *pArgs)
 }
 
 static int
-_pyton_to_dax(tag_type type, dax_type_union *value, PyObject *po)
+_python_to_dax(tag_type type, dax_type_union *value, PyObject *po)
 {
     
     switch (type) {
@@ -605,21 +607,34 @@ pydax_write(PyObject *pSelf, PyObject *pArgs)
         return NULL;
     }
 
-    _pyton_to_dax(h.type, &value, data);
+    _python_to_dax(h.type, &value, data);
 // Convert the data object to a buffer and write
     Py_RETURN_NONE;
 }
 
+/* This function is used by the library as the callback for all the events.
+ * It handles formatting the data for the Python callback and calls it. */
 static void
 _event_callback(void *udata)
 {
-    
+    PyObject *args;
+    PyObject *result;
+    struct callback_data *cbdata;
+
+    cbdata = udata; /* Just to avoid all the type casting. */
+    args = Py_BuildValue("(O)", cbdata->data);
+    result = PyEval_CallObject(cbdata->callback, args);
+    Py_DECREF(args);
 }
 
+/* This is the callback function passed to the event handler that free's
+ * the user data.  In this case some reference counts need to be decremented */
 static void
 _event_del_callback(void *udata)
 {
-    
+    Py_DECREF(((struct callback_data *)udata)->callback);
+    Py_DECREF(((struct callback_data *)udata)->data);
+    free(udata);
 }
 
 /* Used to add an event to the server's event list.  The arguments are...
@@ -629,13 +644,14 @@ _event_del_callback(void *udata)
  * 4 - object - event data
  * 5 - function - callback function
  * 6 - object - callback data
- */
+ *
+ * Returns a tuple that can be used to identify the event */
 static PyObject *
 pydax_event_add(PyObject *pSelf, PyObject *pArgs)
 {
     char *tagname, *str;
-    int count, type, result;
-    PyObject *edata, *pfunc, *udata;
+    int count=0, type=0, result;
+    PyObject *edata=NULL, *pfunc=NULL, *udata=NULL;
     struct callback_data *cb_data;
     dax_type_union value;
     Handle handle;
@@ -652,51 +668,123 @@ pydax_event_add(PyObject *pSelf, PyObject *pArgs)
         PyErr_SetString(PyExc_Exception, "Unable to Allocate Memory");
         return NULL;
     }
-    result = PyArg_ParseTuple(pArgs, "sisOOO", tagname, &count, str, edata, pfunc, udata);
-    //TODO: Check result and act appropriately 
+    result = PyArg_ParseTuple(pArgs, "sisOOO", &tagname, &count, &str, &edata, &pfunc, &udata);
+    /* Check to see if the pfunc object is callable and raise an exception otherwise */
+    if(!PyCallable_Check(pfunc)) {
+    	PyErr_SetString(PyExc_TypeError, "Parameter must be callable");
+    	return NULL;
+    }
+    /* Store the Callback and the Data and increment the reference counters for each */
+	cb_data->callback = pfunc;
+	Py_INCREF(cb_data->callback);
+    cb_data->data = udata;
+    Py_INCREF(cb_data->data);
+
     result = dax_tag_handle(ds, &handle, tagname, count);
-    //TODO: Check result and act appropriately
+    if(result == ERR_NOTFOUND) {
+        PyErr_Format(PyExc_ValueError, "Unable to find tag %s", tagname);
+        return NULL;
+    } else if(result == ERR_2BIG) {
+        PyErr_Format(PyExc_ValueError, "Count is too big for %s", tagname);
+        return NULL;
+    } else if(result != 0) {
+        PyErr_Format(PyExc_ValueError, "Unable to retrieve handle for tag %s", tagname);
+        return NULL;
+    }
+
     /* Get the type from the string passed to us */
     type = dax_event_string_to_type(str);
+    if(type == 0) {
+        PyErr_Format(PyExc_TypeError, "Unknown event type %s", str);
+        return NULL;
+    }
     /* Convert the event data object to a dax data type */
-    result = _python_to_dax(handle.type, &value, edata);
-    //TODO: Check result and act appropriately
-    int dax_event_add(ds, &handle, type, &value, &eid, _event_callback, cb_data, _event_del_callback);
-    //TODO: Create a tuple from the idx and id from 'eid' and return to Python
-    Py_RETURN_NONE;
+    _python_to_dax(handle.type, &value, edata);
+
+    result = dax_event_add(ds, &handle, type, &value, &eid, _event_callback, cb_data, _event_del_callback);
+    if(result) {
+        PyErr_Format(PyExc_RuntimeError, "Unable to create event for %s", tagname);
+        return NULL;
+    }
+    /* Create a tuple from the idx and id from 'eid' and return to Python */
+    //PySys_WriteStdout("_event_add() - index %d, id %d\n", eid.index, eid.id);
+    return Py_BuildValue("(ii)",eid.index, eid.id);
 }
 
+/* wrapper for the dax_event_del() function.  It takes one argument
+ * and that is the event id tuple that would have been returned from
+ * the event_add() function or one of the event polling functions. */
 static PyObject *
 pydax_event_del(PyObject *pSelf, PyObject *pArgs)
 {
+    dax_event_id eid;
+    int result;
+
     if(ds == NULL) {
         PyErr_SetString(PyExc_Exception, "OpenDAX is not initialized");
         return NULL;
     }
-
+    result = PyArg_ParseTuple(pArgs, "(ii)", &eid.index, &eid.id);
+    //PySys_WriteStdout("_event_del() - index %d, id %d\n", eid.index, eid.id);
+    result = dax_event_del(ds, eid);
+    if(result < 0) {
+        PyErr_Format(PyExc_RuntimeError, "Unable to delete event: error = %d", result);
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
+/* Takes one argument from the python script and that is the amount
+ * of time in milliseconds to wait for an event.  If it's zero then
+ * it will wait forever.  Raises an exception on error, returns None
+ * if we timed out and returns the event id tuple if we got a hit. */
 static PyObject *
 pydax_event_wait(PyObject *pSelf, PyObject *pArgs)
 {
+    dax_event_id eid;
+    int result, timeout;
+
     if(ds == NULL) {
         PyErr_SetString(PyExc_Exception, "OpenDAX is not initialized");
         return NULL;
     }
 
-    Py_RETURN_NONE;
+    result = PyArg_ParseTuple(pArgs, "i", &timeout);
+
+    result = dax_event_wait(ds,timeout, &eid);
+    if(result == ERR_NOTFOUND || result == ERR_TIMEOUT) {
+        Py_RETURN_NONE;
+    } else if(result == 0) {
+        return Py_BuildValue("(ii)",eid.index, eid.id);
+    } else {
+        PyErr_SetString(PyExc_RuntimeError, "Error Waiting for event");
+        return NULL;
+    }
 }
 
+/* This function is a wrapper for the dax_event_poll() function
+ * it takes no arguments.  It returns immediately after it is called
+ * and either returns None if no event was pending or the event id
+ * tuple if there was a hit */
 static PyObject *
 pydax_event_poll(PyObject *pSelf, PyObject *pArgs)
 {
+    dax_event_id eid;
+    int result;
+
     if(ds == NULL) {
         PyErr_SetString(PyExc_Exception, "OpenDAX is not initialized");
         return NULL;
     }
-
-    Py_RETURN_NONE;
+    result = dax_event_poll(ds, &eid);
+    if(result == ERR_NOTFOUND) {
+        Py_RETURN_NONE;
+    } else if(result == 0) {
+        return Py_BuildValue("(ii)",eid.index, eid.id);
+    } else {
+        PyErr_SetString(PyExc_RuntimeError, "Error Waiting for event");
+        return NULL;
+    }
 }
 
 static PyMethodDef pydax_methods[] = {

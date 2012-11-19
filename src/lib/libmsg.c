@@ -741,9 +741,6 @@ dax_event_del(dax_state *ds, dax_event_id id)
     }
     libdax_unlock(ds->lock);
     return result;
-
-    
-    return 0;
 }
 
 int
