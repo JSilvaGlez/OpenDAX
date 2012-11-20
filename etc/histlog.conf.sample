@@ -3,4 +3,18 @@ require "common.conf"
 storage = "file"
 --storage = "mysql"
 
---add_tag(name, deadband)
+--File Storage Parameters
+directory = "/var/spool/opendax/histlog"
+rotation   = "daily"
+--rotation = "hourly"
+--rotation = "weekly"
+--rotation = 3600
+
+--MySql Storage Parameters
+database     = "opendax"
+table_prefix = "opendax"
+db_user      = "opendax"
+db_password  = "opendax"
+
+-- add_tag("TagName", deadbad)
+add_tag("HistTag", 0.1)
