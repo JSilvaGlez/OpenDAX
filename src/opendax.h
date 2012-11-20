@@ -64,11 +64,12 @@
 #define LOG_MAJOR   0x00000002  /* Major Program Milestones */
 #define LOG_MINOR   0x00000004  /* Minor Program Milestones */
 #define LOG_FUNC    0x00000008  /* Function Entries */
-#define LOG_COMM    0x00000010  /* Communcations Milestones */
+#define LOG_COMM    0x00000010  /* Communications Milestones */
 #define LOG_MSG     0x00000020  /* Messages */
 #define LOG_MSGERR  0x00000040  /* Errors returned to Modules */
 #define LOG_CONFIG  0x00000080  /* Configurations */
 #define LOG_MODULE  0x00000100  /* Module Milestones */
+#define LOG_WARN    0X00000200  /* Module Warnings */
 #define LOG_VERBOSE 0x80000000  /* Used to increase the verbosity of the other topics */
 #define LOG_ALL     0xFFFFFFFF  /* Log everything */
 
