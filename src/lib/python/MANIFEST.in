@@ -1,0 +1,6 @@
+include *.c
+include *.h
+include Makefile
+include README
+recursive-include demo *.py
+
