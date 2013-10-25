@@ -98,7 +98,7 @@ tag_add(char **tokens)
 /* TODO: If we allow tags to be deleted then gaps will appear in the list.
  * We should deal with these appropriately */
 int
-list_tags(char **tokens)
+list_tags(char **tokens, int tcount)
 {
     dax_tag temp_tag;
     static int lastindex;
@@ -108,8 +108,11 @@ list_tags(char **tokens)
     
     argcount = 0;
     
-    arg[0] = strtok(NULL, " ");
-    
+    if(tcount > 0 && tokens[0] != NULL) {
+        arg[0] = tokens[0];
+        arg[1] = tokens[1];
+    }
+
     if(arg[0]) {
         start = strtol(arg[0], &end_ptr, 0);
         /* If arg[0] is text then it's a tagname instead of an index */
@@ -122,7 +125,6 @@ list_tags(char **tokens)
             }
             /* arg[0] should be an integer here and start is the first one */
         } else {
-            arg[1] = strtok(NULL, " ");
             /* List tags from start to start + count */
             if(arg[1]) {
                 count = strtol(arg[1], &end_ptr, 0);

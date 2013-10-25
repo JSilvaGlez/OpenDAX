@@ -28,7 +28,7 @@
 
 /* TAG commands */
 int tag_add(char **tokens);
-int list_tags(char **tokens);
+int list_tags(char **tokens, int tcount);
 int tag_read(char **tokens);
 int tag_write(char **tokens, int tcount);
 
