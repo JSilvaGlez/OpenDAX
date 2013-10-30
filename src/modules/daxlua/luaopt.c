@@ -75,7 +75,7 @@ _set_trigger(lua_State *L, script_t *s) {
     
     lua_getfield(L, -1, "tag");
     s->event_tagname = strdup((char *)lua_tostring(L, -1));
-    if(tagname == NULL) {
+    if(s->event_tagname == NULL) {
         luaL_error(L, "'tagname' is required for an event trigger");
         s->trigger = 0;
     }

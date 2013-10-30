@@ -357,8 +357,8 @@ msg_mod_register(dax_message *msg)
     dax_module *mod;
     
     if(msg->size > 0) {
-    	/* The first parameter is the timeout if the first registration and
-    	 * the module id if it's the async socket registration. */
+        /* The first parameter is the timeout if the first registration and
+         * the module id if it's the async socket registration. */
         parint = ntohl(*((u_int32_t *)&msg->data[0]));
         flags = ntohl(*((u_int32_t *)&msg->data[4]));
         
@@ -379,9 +379,6 @@ msg_mod_register(dax_message *msg)
                 *((u_int64_t *)&buff[10]) = REG_TEST_LINT;   /* 64 bit integer test data */
                 *((float *)&buff[18])    = REG_TEST_REAL;   /* 32 bit float test data */
                 *((double *)&buff[22])   = REG_TEST_LREAL;  /* 64 bit float test data */
-                //Do we really need to send the name back??
-                //strncpy(&buff[30], mod->name, DAX_MSGMAX - 26 - 1);
-                //_message_send(msg->fd, MSG_MOD_REG, buff, 30 + strlen(mod->name) + 1, RESPONSE);
                 _message_send(msg->fd, MSG_MOD_REG, buff, 30 + 1, RESPONSE);
 
             }

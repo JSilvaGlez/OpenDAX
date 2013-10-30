@@ -188,7 +188,7 @@ process_del(dax_process *proc)
         if(proc == _process_list) { /* If this is the first process */
             _process_list = _process_list->next;
         } else {
-            last = proc;
+            this = last = proc;
             while(this != NULL) {
                 this = proc->next;
                 if(this == proc) {

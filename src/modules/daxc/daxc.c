@@ -255,6 +255,7 @@ runfile(char *filename)
         if(string[len-1] == '\n') string[len-1] = '\0';
         runcmd(string);
     }
+    fclose(file);
     return 0;
 }
 
