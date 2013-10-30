@@ -189,6 +189,8 @@ _mod_connect(dax_state *ds, char *name)
 {
     int result, len;
     char buff[DAX_MSGMAX];
+    float v_float;
+    double v_double;
     
 /* TODO: Boundary check that a name that is longer than data size will
    be handled correctly. */
@@ -226,8 +228,11 @@ _mod_connect(dax_state *ds, char *name)
         ds->reformat = 0; /* this is redundant, already done in dax_init() */
     }
     /* There has got to be a better way to compare that we are getting good floating point numbers */
-    if( fabs(*((float *)&buff[18]) - REG_TEST_REAL) / REG_TEST_REAL   > 0.0000001 ||
-        fabs(*((double *)&buff[22]) - REG_TEST_LREAL) / REG_TEST_REAL > 0.0000001) {
+    memcpy(&v_float, &buff[18], sizeof(float));
+    memcpy(&v_double, &buff[22], sizeof(double));
+    
+    if( fabs(v_float - REG_TEST_REAL) / REG_TEST_REAL   > 0.0000001 ||
+        fabs(v_double - REG_TEST_LREAL) / REG_TEST_LREAL > 0.0000001) {
         ds->reformat |= REF_FLT_SWAP;
     }
     /* TODO: returning _reformat is only good until we figure out how to reformat the
