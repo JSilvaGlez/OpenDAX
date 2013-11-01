@@ -57,7 +57,7 @@ setdefaults(void)
 static void
 parsecommandline(int argc, const char *argv[])
 {
-    char c;
+    int c;
 
     static struct option options[] = {
         {"config", required_argument, 0, 'C'},
